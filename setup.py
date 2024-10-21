@@ -156,7 +156,8 @@ if not SKIP_CUDA_BUILD and not IS_ROCM:
         generator_flag = ["-DOLD_GENERATOR_PATH"]
 
     check_if_cuda_home_none("flash_attn")
-    # Check, if CUDA11 is installed for compute capability 8.0
+
+    # Check if CUDA 11.7 or above is installed for compute capability 8.0
     cc_flag = []
     if CUDA_HOME is not None:
         _, bare_metal_version = get_cuda_bare_metal_version(CUDA_HOME)
@@ -165,14 +166,20 @@ if not SKIP_CUDA_BUILD and not IS_ROCM:
                 "FlashAttention is only supported on CUDA 11.7 and above.  "
                 "Note: make sure nvcc has a supported version by running nvcc -V."
             )
-    # cc_flag.append("-gencode")
-    # cc_flag.append("arch=compute_75,code=sm_75")
+
+    # Add compute capability flags for the specific GPU architecture
     cc_flag.append("-gencode")
     cc_flag.append("arch=compute_80,code=sm_80")
+
+    # Add support for compute capability 9.0 if using CUDA 11.8 or above
     if CUDA_HOME is not None:
         if bare_metal_version >= Version("11.8"):
             cc_flag.append("-gencode")
             cc_flag.append("arch=compute_90,code=sm_90")
+
+    # Add the flag to allow unsupported compilers (for your Visual Studio version)
+    cc_flag.append("-allow-unsupported-compiler")
+
 
     # HACK: The compiler flag -D_GLIBCXX_USE_CXX11_ABI is set to be the same as
     # torch._C._GLIBCXX_USE_CXX11_ABI
